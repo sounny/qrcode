@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QR Maker — Single‑File</title>
+  <meta name="description" content="Simple, modern QR code generator. Single file. Works on GitHub Pages." />
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #111936;
+      --text: #e6e9f2;
+      --muted: #aeb6cf;
+      --accent: #4f7cff;
+      --ok: #2ecc71;
+      --warn: #ffb020;
+      --danger: #ff5a6e;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, Noto Sans, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 10% -10%, #1a2353 0%, transparent 50%), radial-gradient(1000px 600px at 100% 0%, #16224f 0%, transparent 60%), var(--bg);
+      color: var(--text); line-height: 1.45; display: grid; place-items: start center;
+      padding: 32px 16px 56px;
+    }
+    .app {
+      width: 100%; max-width: 980px; background: linear-gradient(180deg, #101a3a, #0d1731);
+      border: 1px solid #1f2a56; border-radius: var(--radius); box-shadow: 0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+      overflow: hidden;
+    }
+    header { padding: 18px 18px 0; }
+    .title {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .title h1 { font-size: 22px; margin: 0; letter-spacing: .2px; }
+    .badge { font-size: 12px; color: #d6dcff; background: #283571; padding: 4px 8px; border-radius: 999px; border: 1px solid #3b4a8e; }
+
+    .grid {
+      display: grid; grid-template-columns: 1fr; gap: 16px; padding: 18px;
+    }
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: 1.2fr .8fr; }
+    }
+
+    .card { background: var(--panel); border: 1px solid #212a59; border-radius: 14px; padding: 16px; }
+    .card h2 { margin: 0 0 10px; font-size: 16px; color: #eaf; letter-spacing: .2px; }
+
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    input[type="text"] {
+      width: 100%; padding: 14px 14px; border-radius: 12px; border: 1px solid #2b3873; background: #0f1737; color: var(--text); font-size: 15px;
+      outline: none; box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+    }
+    input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,124,255,.2); }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+    .btn {
+      appearance: none; border: 1px solid #2f3f86; background: linear-gradient(180deg, #2b3c86, #273471);
+      color: white; border-radius: 12px; padding: 12px 14px; font-size: 14px; cursor: pointer; transition: transform .05s ease, filter .2s ease, background .3s ease;
+    }
+    .btn:hover { filter: brightness(1.05); }
+    .btn:active { transform: translateY(1px); }
+    .btn.secondary { background: #172359; }
+    .btn.ghost { background: transparent; border-color: #2a3566; color: #d7dcff; }
+    .btn.success { background: linear-gradient(180deg, #2ecc71, #1ea95a); border-color: #1ea95a; }
+    .btn.warn { background: linear-gradient(180deg, #ffb020, #e49a1c); border-color: #e49a1c; }
+
+    .tool-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+    .color-pick { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; }
+    .color-pick input[type="color"] { width: 42px; height: 34px; border: none; background: transparent; padding: 0; }
+
+    .opt {
+      display: grid; gap: 8px; grid-template-columns: 1fr 1fr; align-items: end;
+    }
+    .opt input[type="range"], .opt select, .opt input[type="file"] {
+      width: 100%;
+    }
+    select, input[type="range"], input[type="file"] {
+      padding: 10px; border-radius: 10px; border: 1px solid #2b3873; background: #0f1737; color: var(--text);
+    }
+    input[type="range"] { padding: 0; height: 30px; }
+
+    details {
+      border-top: 1px dashed #2a3566; margin-top: 12px; padding-top: 12px;
+    }
+    details > summary { cursor: pointer; color: #cbd4ff; margin-bottom: 8px; }
+
+    .preview {
+      display: grid; grid-template-rows: auto 1fr auto; gap: 10px; align-items: start; height: 100%;
+    }
+    canvas { width: 100%; height: auto; background: white; border-radius: 12px; border: 1px solid #223170; image-rendering: pixelated; }
+
+    .status { font-size: 12px; color: var(--muted); min-height: 18px; }
+    .pill { display: inline-block; padding: 4px 8px; background: #203174; border: 1px solid #324390; border-radius: 999px; }
+
+    footer { padding: 6px 18px 16px; color: var(--muted); font-size: 12px; text-align: center; }
+    footer a { color: #cfe0ff; }
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="QR code generator">
+    <header>
+      <div class="title">
+        <h1>QR Maker</h1>
+        <span class="badge">Single file · GitHub Pages ready</span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card" aria-labelledby="make-qr">
+        <h2 id="make-qr">Make a QR</h2>
+        <label for="data">Text or URL</label>
+        <input id="data" type="text" placeholder="https://example.com" autocomplete="on" />
+        <div class="tool-row" style="margin-top:10px">
+          <button id="btn-generate" class="btn">Generate</button>
+          <button id="btn-copy" class="btn secondary" title="Copy image to clipboard">Copy PNG</button>
+          <button id="btn-download" class="btn success" title="Download PNG">Download PNG</button>
+          <button id="btn-reset" class="btn ghost" title="Reset">Reset</button>
+        </div>
+
+        <details>
+          <summary>More options</summary>
+          <div class="row">
+            <div class="color-pick">
+              <label for="darkColor">Dark color</label>
+              <input id="darkColor" type="color" value="#000000" />
+            </div>
+            <div class="color-pick">
+              <label for="lightColor">Light color</label>
+              <input id="lightColor" type="color" value="#ffffff" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="size">Size (px): <span id="sizeVal" class="pill">512</span></label>
+              <input id="size" type="range" min="128" max="1024" step="32" value="512" />
+            </div>
+            <div>
+              <label for="margin">Quiet zone (px): <span id="marginVal" class="pill">4</span></label>
+              <input id="margin" type="range" min="0" max="16" step="1" value="4" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="ecc">Error correction</label>
+              <select id="ecc">
+                <option value="L">L (small)</option>
+                <option value="M" selected>M (medium)</option>
+                <option value="Q">Q (high)</option>
+                <option value="H">H (max)</option>
+              </select>
+            </div>
+            <div>
+              <label for="logo">Logo (center, PNG/JPG/SVG)</label>
+              <input id="logo" type="file" accept="image/*,image/svg+xml" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="logoSize">Logo size (% of QR): <span id="logoSizeVal" class="pill">20</span></label>
+              <input id="logoSize" type="range" min="10" max="35" step="1" value="20" />
+            </div>
+            <div>
+              <label for="logoRound">Logo round (px): <span id="logoRoundVal" class="pill">10</span></label>
+              <input id="logoRound" type="range" min="0" max="40" step="1" value="10" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="logoPad">Logo pad (px): <span id="logoPadVal" class="pill">8</span></label>
+              <input id="logoPad" type="range" min="0" max="32" step="1" value="8" />
+            </div>
+            <div>
+              <label for="bgTrans">Transparent PNG</label>
+              <select id="bgTrans">
+                <option value="no" selected>No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+          </div>
+        </details>
+
+        <div class="status" id="status" aria-live="polite"></div>
+      </section>
+
+      <section class="card preview" aria-labelledby="preview">
+        <h2 id="preview">Preview</h2>
+        <canvas id="canvas" width="1024" height="1024"></canvas>
+        <div class="status">Tip: choose error correction <strong>H</strong> if you add a big logo.</div>
+      </section>
+    </div>
+
+    <footer>
+      <div>
+        Built with one HTML file. No build. No tracking.
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ---- Simple single-file QR Generator using a public image API ----
+    // This app fetches a QR PNG from api.qrserver.com and draws it on a canvas.
+    // You can swap the provider later or drop in a JS QR library if you prefer fully offline.
+
+    const els = {
+      data: document.getElementById('data'),
+      btnGen: document.getElementById('btn-generate'),
+      btnCopy: document.getElementById('btn-copy'),
+      btnDl: document.getElementById('btn-download'),
+      btnReset: document.getElementById('btn-reset'),
+      darkColor: document.getElementById('darkColor'),
+      lightColor: document.getElementById('lightColor'),
+      size: document.getElementById('size'), sizeVal: document.getElementById('sizeVal'),
+      margin: document.getElementById('margin'), marginVal: document.getElementById('marginVal'),
+      ecc: document.getElementById('ecc'),
+      logo: document.getElementById('logo'),
+      logoSize: document.getElementById('logoSize'), logoSizeVal: document.getElementById('logoSizeVal'),
+      logoRound: document.getElementById('logoRound'), logoRoundVal: document.getElementById('logoRoundVal'),
+      logoPad: document.getElementById('logoPad'), logoPadVal: document.getElementById('logoPadVal'),
+      bgTrans: document.getElementById('bgTrans'),
+      canvas: document.getElementById('canvas'),
+      status: document.getElementById('status'),
+    };
+    const ctx = els.canvas.getContext('2d');
+
+    // Helpers
+    function hexNoHash(hex) { return hex.replace(/^#/, ''); }
+    function show(msg, tone = 'info') {
+      const color = tone === 'ok' ? 'var(--ok)' : tone === 'warn' ? 'var(--warn)' : tone === 'err' ? 'var(--danger)' : 'var(--muted)';
+      els.status.innerHTML = `<span class="pill" style="border-color:${color}; color:${color}">${msg}</span>`;
+    }
+    function debounce(fn, ms = 300) {
+      let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+
+    function buildQRUrl({ data, size, margin, ecc, dark, light }) {
+      const base = 'https://api.qrserver.com/v1/create-qr-code/';
+      // API params: size=WxH, data, margin (qzone), color, bgcolor, ecc
+      const params = new URLSearchParams();
+      params.set('data', data);
+      params.set('size', `${size}x${size}`);
+      params.set('qzone', String(margin));
+      params.set('ecc', ecc);
+      params.set('format', 'png');
+      params.set('color', hexNoHash(dark));
+      if (els.bgTrans.value === 'yes') {
+        // Transparent: ask for png and ignore bgcolor (we will clear later)
+      } else {
+        params.set('bgcolor', hexNoHash(light));
+      }
+      return `${base}?${params.toString()}`;
+    }
+
+    function clearCanvas(size, bg) {
+      els.canvas.width = size; els.canvas.height = size;
+      ctx.clearRect(0, 0, size, size);
+      if (els.bgTrans.value !== 'yes') {
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
+      }
+    }
+
+    async function drawQR() {
+      const data = els.data.value.trim();
+      if (!data) { show('Enter text or a URL.', 'warn'); return; }
+      const size = parseInt(els.size.value, 10);
+      const margin = parseInt(els.margin.value, 10);
+      const ecc = els.ecc.value;
+      const dark = els.darkColor.value; const light = els.lightColor.value;
+      const url = buildQRUrl({ data, size, margin, ecc, dark, light });
+
+      clearCanvas(size, light);
+      show('Making QR…');
+
+      try {
+        // Fetch as blob to keep canvas CORS-safe.
+        const res = await fetch(url, { mode: 'cors', cache: 'no-store' });
+        if (!res.ok) throw new Error('Bad response');
+        const blob = await res.blob();
+        const img = await blobToImage(blob);
+        ctx.drawImage(img, 0, 0, size, size);
+        await drawLogoIfAny();
+        show('Ready.', 'ok');
+      } catch (err) {
+        console.error(err);
+        // Fallback: draw via <img> with crossOrigin in case fetch failed but CORS allows draw
+        await drawViaImg(url, size);
+        await drawLogoIfAny();
+        show('Ready (fallback).', 'ok');
+      }
+    }
+
+    function blobToImage(blob) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = e => { URL.revokeObjectURL(url); reject(e); };
+        img.src = url;
+      });
+    }
+
+    function drawViaImg(src, size) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => { ctx.drawImage(img, 0, 0, size, size); resolve(); };
+        img.onerror = reject; img.src = src;
+      });
+    }
+
+    async function drawLogoIfAny() {
+      const file = els.logo.files && els.logo.files[0];
+      if (!file) return;
+      const size = parseInt(els.size.value, 10);
+      const logoPct = parseInt(els.logoSize.value, 10) / 100; // 0.2
+      const logoW = Math.round(size * logoPct);
+      const logoH = logoW;
+      const x = Math.round(size / 2 - logoW / 2);
+      const y = Math.round(size / 2 - logoH / 2);
+
+      const pad = parseInt(els.logoPad.value, 10);
+      const r = parseInt(els.logoRound.value, 10);
+
+      // White pad box for better scan
+      if (pad > 0) {
+        ctx.save();
+        ctx.fillStyle = els.bgTrans.value === 'yes' ? 'rgba(255,255,255,.95)' : '#fff';
+        roundRect(ctx, x - pad, y - pad, logoW + pad * 2, logoH + pad * 2, r);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      const imgURL = await fileToDataURL(file);
+      const img = await loadImage(imgURL);
+      ctx.drawImage(img, x, y, logoW, logoH);
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      r = Math.min(r, w/2, h/2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function fileToDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.onerror = reject; fr.readAsDataURL(file);
+      });
+    }
+
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject; img.src = src;
+      });
+    }
+
+    async function copyPNG() {
+      try {
+        const blob = await new Promise(res => els.canvas.toBlob(res, 'image/png'));
+        if (!blob) throw new Error('No image.');
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          show('PNG copied to clipboard.', 'ok');
+        } else {
+          throw new Error('Clipboard API not supported');
+        }
+      } catch (err) {
+        console.warn(err);
+        // Fallback: copy URL text
+        const url = buildQRUrl({
+          data: els.data.value.trim(),
+          size: parseInt(els.size.value, 10),
+          margin: parseInt(els.margin.value, 10),
+          ecc: els.ecc.value,
+          dark: els.darkColor.value,
+          light: els.lightColor.value,
+        });
+        try {
+          await navigator.clipboard.writeText(url);
+          show('Copied image URL (fallback).', 'warn');
+        } catch {
+          show('Could not copy. Save the PNG instead.', 'err');
+        }
+      }
+    }
+
+    async function downloadPNG() {
+      try {
+        const blob = await new Promise(res => els.canvas.toBlob(res, 'image/png'));
+        if (!blob) throw new Error('No image');
+        const a = document.createElement('a');
+        a.download = 'qr.png';
+        a.href = URL.createObjectURL(blob);
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        show('PNG saved.', 'ok');
+      } catch (err) {
+        console.warn(err);
+        // Fallback: direct-download from API
+        const url = buildQRUrl({
+          data: els.data.value.trim(),
+          size: parseInt(els.size.value, 10),
+          margin: parseInt(els.margin.value, 10),
+          ecc: els.ecc.value,
+          dark: els.darkColor.value,
+          light: els.lightColor.value,
+        });
+        const a = document.createElement('a');
+        a.download = 'qr.png'; a.href = url; a.click();
+        show('Saved from source.', 'ok');
+      }
+    }
+
+    function resetAll() {
+      els.data.value = '';
+      els.darkColor.value = '#000000'; els.lightColor.value = '#ffffff';
+      els.size.value = 512; els.sizeVal.textContent = '512';
+      els.margin.value = 4; els.marginVal.textContent = '4';
+      els.ecc.value = 'M';
+      els.logo.value = '';
+      els.logoSize.value = 20; els.logoSizeVal.textContent = '20';
+      els.logoRound.value = 10; els.logoRoundVal.textContent = '10';
+      els.logoPad.value = 8; els.logoPadVal.textContent = '8';
+      els.bgTrans.value = 'no';
+      clearCanvas(1024, '#ffffff');
+      show('Cleared.');
+    }
+
+    // Wire up UI
+    els.size.addEventListener('input', () => { els.sizeVal.textContent = els.size.value; });
+    els.margin.addEventListener('input', () => { els.marginVal.textContent = els.margin.value; });
+    els.logoSize.addEventListener('input', () => { els.logoSizeVal.textContent = els.logoSize.value; });
+    els.logoRound.addEventListener('input', () => { els.logoRoundVal.textContent = els.logoRound.value; });
+    els.logoPad.addEventListener('input', () => { els.logoPadVal.textContent = els.logoPad.value; });
+
+    const autoMake = debounce(drawQR, 400);
+    ['data','darkColor','lightColor','size','margin','ecc','logoSize','logoRound','logoPad','bgTrans'].forEach(id => {
+      const el = els[id]; el && el.addEventListener('input', autoMake);
+    });
+    els.logo.addEventListener('change', drawQR);
+
+    els.btnGen.addEventListener('click', e => { e.preventDefault(); drawQR(); });
+    els.btnCopy.addEventListener('click', e => { e.preventDefault(); copyPNG(); });
+    els.btnDl.addEventListener('click', e => { e.preventDefault(); downloadPNG(); });
+    els.btnReset.addEventListener('click', e => { e.preventDefault(); resetAll(); });
+
+    // Paste to URL box quickly
+    els.data.addEventListener('paste', () => setTimeout(drawQR, 50));
+
+    // First paint
+    clearCanvas(1024, '#ffffff');
+    show('Enter a link and press Generate.');
+  </script>
+</body>
+</html>
