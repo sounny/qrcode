@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>QR Maker — Single‑File</title>
-  <meta name="description" content="Simple, modern QR code generator. Single file. Works on GitHub Pages." />
+  <title>Sounny's QR Code Maker</title>
+  <meta name="description" content="Sounny's simple, modern QR code generator. Single file. Works on GitHub Pages." />
   <style>
     :root {
       --bg: #0b1020;
       --panel: #111936;
       --text: #e6e9f2;
       --muted: #aeb6cf;
-      --accent: #4f7cff;
+      --accent: #ff4d6d;
       --ok: #2ecc71;
       --warn: #ffb020;
       --danger: #ff5a6e;
@@ -35,7 +35,7 @@
       display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     }
     .title h1 { font-size: 22px; margin: 0; letter-spacing: .2px; }
-    .badge { font-size: 12px; color: #d6dcff; background: #283571; padding: 4px 8px; border-radius: 999px; border: 1px solid #3b4a8e; }
+    .badge { font-size: 12px; color: #fff; background: #ff4d6d; padding: 4px 8px; border-radius: 999px; border: 1px solid #e03a55; }
 
     .grid {
       display: grid; grid-template-columns: 1fr; gap: 16px; padding: 18px;
@@ -52,13 +52,13 @@
       width: 100%; padding: 14px 14px; border-radius: 12px; border: 1px solid #2b3873; background: #0f1737; color: var(--text); font-size: 15px;
       outline: none; box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
     }
-    input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,124,255,.2); }
+    input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,77,109,.2); }
 
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 
     .btn {
-      appearance: none; border: 1px solid #2f3f86; background: linear-gradient(180deg, #2b3c86, #273471);
+      appearance: none; border: 1px solid #e03a55; background: linear-gradient(180deg, #ff4d6d, #e03a55);
       color: white; border-radius: 12px; padding: 12px 14px; font-size: 14px; cursor: pointer; transition: transform .05s ease, filter .2s ease, background .3s ease;
     }
     .btn:hover { filter: brightness(1.05); }
@@ -105,7 +105,7 @@
   <div class="app" role="application" aria-label="QR code generator">
     <header>
       <div class="title">
-        <h1>QR Maker</h1>
+        <h1>Sounny's QR Code Maker</h1>
         <span class="badge">Single file · GitHub Pages ready</span>
       </div>
     </header>
@@ -200,7 +200,7 @@
 
     <footer>
       <div>
-        Built with one HTML file. No build. No tracking.
+        Made with love by <a href="https://sounny.github.io">sounny</a>.
       </div>
     </footer>
   </div>
