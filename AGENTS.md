@@ -9,7 +9,9 @@ Commit updates to this file alongside your code.
 
 ## Log
 - 2025-05-20: Personalized the app with Sounny's branding, added footer link, refreshed colors, wrote README, and created this working memory.
+- 2025-08-14: Swapped 'love' for a heart emoji in the footer and removed the header badge.
 
 ## Ideas
 - Replace external QR API with an offline library for better privacy.
 - Add a light/dark theme toggle.
+- Allow customizing header/footer text from a settings panel.
