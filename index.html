@@ -240,6 +240,8 @@
       let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
     }
 
+    const STORAGE_KEY = 'qr-maker-settings-v1';
+
     function buildQRUrl({ data, size, margin, ecc, dark, light }) {
       const base = 'https://api.qrserver.com/v1/create-qr-code/';
       // API params: size=WxH, data, margin (qzone), color, bgcolor, ecc
@@ -264,6 +266,49 @@
       if (els.bgTrans.value !== 'yes') {
         ctx.fillStyle = bg; ctx.fillRect(0, 0, size, size);
       }
+    }
+
+    function saveSettings() {
+      const payload = {
+        data: els.data.value,
+        darkColor: els.darkColor.value,
+        lightColor: els.lightColor.value,
+        size: els.size.value,
+        margin: els.margin.value,
+        ecc: els.ecc.value,
+        logoSize: els.logoSize.value,
+        logoRound: els.logoRound.value,
+        logoPad: els.logoPad.value,
+        bgTrans: els.bgTrans.value,
+      };
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); }
+      catch (err) { console.warn('Could not save settings', err); }
+    }
+
+    function restoreSettings() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const payload = JSON.parse(raw);
+        Object.entries(payload).forEach(([key, val]) => {
+          if (els[key] && typeof val !== 'undefined') {
+            els[key].value = val;
+          }
+        });
+        syncValueLabels();
+        return true;
+      } catch (err) {
+        console.warn('Could not restore settings', err);
+        return false;
+      }
+    }
+
+    function syncValueLabels() {
+      els.sizeVal.textContent = els.size.value;
+      els.marginVal.textContent = els.margin.value;
+      els.logoSizeVal.textContent = els.logoSize.value;
+      els.logoRoundVal.textContent = els.logoRound.value;
+      els.logoPadVal.textContent = els.logoPad.value;
     }
 
     async function drawQR() {
@@ -437,6 +482,7 @@
       els.logoRound.value = 10; els.logoRoundVal.textContent = '10';
       els.logoPad.value = 8; els.logoPadVal.textContent = '8';
       els.bgTrans.value = 'no';
+      saveSettings();
       clearCanvas(1024, '#ffffff');
       show('Cleared.');
     }
@@ -449,10 +495,12 @@
     els.logoPad.addEventListener('input', () => { els.logoPadVal.textContent = els.logoPad.value; });
 
     const autoMake = debounce(drawQR, 400);
+    const saveAndAuto = debounce(() => { saveSettings(); autoMake(); }, 150);
+
     ['data','darkColor','lightColor','size','margin','ecc','logoSize','logoRound','logoPad','bgTrans'].forEach(id => {
-      const el = els[id]; el && el.addEventListener('input', autoMake);
+      const el = els[id]; el && el.addEventListener('input', saveAndAuto);
     });
-    els.logo.addEventListener('change', drawQR);
+    els.logo.addEventListener('change', () => { saveSettings(); drawQR(); });
 
     els.btnGen.addEventListener('click', e => { e.preventDefault(); drawQR(); });
     els.btnCopy.addEventListener('click', e => { e.preventDefault(); copyPNG(); });
@@ -464,7 +512,12 @@
 
     // First paint
     clearCanvas(1024, '#ffffff');
-    show('Enter a link and press Generate.');
+    if (restoreSettings()) {
+      show('Restored your last setup.', 'ok');
+      if (els.data.value.trim()) drawQR();
+    } else {
+      show('Enter a link and press Generate.');
+    }
   </script>
 </body>
 </html>

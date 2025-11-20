@@ -10,6 +10,7 @@ Commit updates to this file alongside your code.
 ## Log
 - 2025-05-20: Personalized the app with Sounny's branding, added footer link, refreshed colors, wrote README, and created this working memory.
 - 2025-08-14: Swapped 'love' for a heart emoji in the footer and removed the header badge.
+- 2026-02-24: Added local settings persistence so the QR maker restores your last configuration automatically.
 
 ## Ideas
 - Replace external QR API with an offline library for better privacy.
