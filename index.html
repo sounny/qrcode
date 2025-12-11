@@ -63,6 +63,7 @@
     }
     .btn:hover { filter: brightness(1.05); }
     .btn:active { transform: translateY(1px); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(0.2); }
     .btn.secondary { background: #172359; }
     .btn.ghost { background: transparent; border-color: #2a3566; color: #d7dcff; }
     .btn.success { background: linear-gradient(180deg, #2ecc71, #1ea95a); border-color: #1ea95a; }
@@ -229,6 +230,8 @@
       status: document.getElementById('status'),
     };
     const ctx = els.canvas.getContext('2d');
+    let isGenerating = false;
+    let hasQR = false;
 
     // Helpers
     function hexNoHash(hex) { return hex.replace(/^#/, ''); }
@@ -238,6 +241,13 @@
     }
     function debounce(fn, ms = 300) {
       let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+
+    function setGenerating(state) {
+      isGenerating = state;
+      els.btnGen.disabled = state;
+      els.btnGen.setAttribute('aria-busy', state ? 'true' : 'false');
+      els.btnGen.textContent = state ? 'Generating…' : 'Generate';
     }
 
     const STORAGE_KEY = 'qr-maker-settings-v1';
@@ -312,8 +322,9 @@
     }
 
     async function drawQR() {
+      if (isGenerating) return;
       const data = els.data.value.trim();
-      if (!data) { show('Enter text or a URL.', 'warn'); return; }
+      if (!data) { hasQR = false; show('Enter text or a URL.', 'warn'); return; }
       const size = parseInt(els.size.value, 10);
       const margin = parseInt(els.margin.value, 10);
       const ecc = els.ecc.value;
@@ -321,6 +332,7 @@
       const url = buildQRUrl({ data, size, margin, ecc, dark, light });
 
       clearCanvas(size, light);
+      setGenerating(true);
       show('Making QR…');
 
       try {
@@ -331,13 +343,23 @@
         const img = await blobToImage(blob);
         ctx.drawImage(img, 0, 0, size, size);
         await drawLogoIfAny();
+        hasQR = true;
         show('Ready.', 'ok');
       } catch (err) {
         console.error(err);
         // Fallback: draw via <img> with crossOrigin in case fetch failed but CORS allows draw
-        await drawViaImg(url, size);
-        await drawLogoIfAny();
-        show('Ready (fallback).', 'ok');
+        try {
+          await drawViaImg(url, size);
+          await drawLogoIfAny();
+          hasQR = true;
+          show('Ready (fallback).', 'ok');
+        } catch (fallbackErr) {
+          console.error('Fallback failed', fallbackErr);
+          hasQR = false;
+          show('Could not reach the QR service. Check your connection and try again.', 'err');
+        }
+      } finally {
+        setGenerating(false);
       }
     }
 
@@ -415,6 +437,7 @@
     }
 
     async function copyPNG() {
+      if (!hasQR) { show('Generate a QR code first.', 'warn'); return; }
       try {
         const blob = await new Promise(res => els.canvas.toBlob(res, 'image/png'));
         if (!blob) throw new Error('No image.');
@@ -445,6 +468,7 @@
     }
 
     async function downloadPNG() {
+      if (!hasQR) { show('Generate a QR code first.', 'warn'); return; }
       try {
         const blob = await new Promise(res => els.canvas.toBlob(res, 'image/png'));
         if (!blob) throw new Error('No image');
@@ -482,6 +506,8 @@
       els.logoRound.value = 10; els.logoRoundVal.textContent = '10';
       els.logoPad.value = 8; els.logoPadVal.textContent = '8';
       els.bgTrans.value = 'no';
+      hasQR = false;
+      setGenerating(false);
       saveSettings();
       clearCanvas(1024, '#ffffff');
       show('Cleared.');

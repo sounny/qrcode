@@ -6,6 +6,7 @@ A personal, single-file web app for creating QR codes. The entire application li
 - Generate QR codes from text or URLs
 - Customize size, colors, and error correction
 - Add a logo and download or copy the result
+- Built-in safeguards to avoid copying/downloading before a QR exists, plus clearer status messaging when network calls fail
 
 ## Usage
 Open `index.html` in any modern browser or publish the file via GitHub Pages.
